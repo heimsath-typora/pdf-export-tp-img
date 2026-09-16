@@ -1,2 +1,4 @@
 # pdf-export-tp-img
-PDF export with a title page and an easy-to-add image for the title page, all in a simple script for the export settings.
+Basically it's a PDF export whith a title page(tp) and an easy toa add image for the title page(img). All in a single script for the Typora export settings.
+
+
