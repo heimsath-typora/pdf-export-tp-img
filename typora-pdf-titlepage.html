@@ -1,0 +1,154 @@
+<!--
+=====================================================================
+YAML front matter template - copy this to the top of any Markdown
+document. Leave fields blank or omit them if you don't need them.
+=====================================================================
+
+---
+title: ""
+author: ""
+description: ""
+descriptionSub: ""
+date: ""
+license: ""
+version: ""
+contact: ""
+licenseLink: ""
+---
+
+"title" is the only required field - if it's missing or empty, the
+cover page div below is removed again via JavaScript (no cover
+without a title). All other fields are optional; an empty ${var}
+placeholder is simply replaced with an empty string by Pandoc.
+
+Image for the cover page: right after the YAML block in the Markdown
+source, insert an image whose filename contains "TP_Image", e.g.:
+
+![](TP_Image.png)
+
+File type doesn't matter (svg/png/jpg) and size is flexible - it's
+capped at max. 5cm in each direction; a larger or differently shaped
+image just pushes the text below it a bit further down.
+=====================================================================
+-->
+
+<!-- Additional metas to read the coverpage vars from-->
+<meta name="title" content="${title}">
+<meta name="author" content="${author}">
+<meta name="description" content="${description}">
+<meta name="descriptionSub" content="${descriptionSub}">
+<meta name="date" content="${date}">
+<meta name="license" content="${license}">
+<meta name="version" content="${version}">
+<meta name="contact" content="${contact}">
+<link rel="license" href="${licenseLink}">
+
+<!-- The actual block for the cover page, gets moved to the top of <body> via JavaScript -->
+<div id='_export_cover' style="height: calc(100vh - 60mm); page-break-after: always; break-after: page;">
+    <!-- The box had a problem with its area reaching into the next page,
+    so the next page's content started around the middle of the page -
+    that's why I added height: calc(100vh - 30mm) instead of height: 100vh.
+    It seems the PDF export doesn't handle the viewport height (vh) unit
+    correctly.
+
+    "page-break-after" / "break-after" (below, older and newer CSS
+    syntax) is a second, independent safety net for the same problem:
+    even if the height calculation above isn't exactly right, this
+    forces a real page break right after the cover, so the following
+    content still reliably starts on page two instead of bleeding into
+    the cover page. -->
+    <div id='_export_title' style="margin-top: 15%;text-align: center;font-size: 3rem; padding-left:10%; padding-right:10%; ">
+    </div>
+    <div id='_export_description' style="margin-top: 7%;text-align: center;font-size: 2rem; padding-left:10%; padding-right:10%;">
+    </div>
+    <div id='_export_descriptionSub' style="margin-top: 3%;text-align: center;font-size: 1.8rem; padding-left:10%; padding-right:10%;">
+    </div>
+
+    <!-- Slot for the cover image - filled via JS if an image with
+         "TP_Image" in its filename is found in the document, removed
+         again otherwise -->
+    <div id='_export_image' style="margin-top: 5%;margin-bottom: 5%;text-align: center;">
+    </div>
+
+    <div id='_export_author' style="margin-top: 8%;text-align: center;font-size: 1.9rem; padding-left:10%; padding-right:10%;">
+    </div>
+    <div id='_export_contact' style="margin-top: 1%;text-align: center;font-size: 1.7rem; padding-left:10%; padding-right:10%;">
+    </div>
+    <div id='_export_date' style="margin-top: 5%;text-align: center;font-size: 1.5rem; padding-left:10%; padding-right:10%;">
+    </div>
+    <div id='_export_license' style="margin-top: 1%;text-align: center;font-size: 1.9rem; padding-left:10%; padding-right:10%;">
+    </div>
+
+
+
+</div>
+<script>
+// Typora only lets us append content at the end of <body>, so we need
+// to move it to the top of the page ourselves.
+
+// Typora (or maybe Pandoc) takes care of filling the YAML variables
+// into the meta tags above; here we read the values back out of them.
+
+var $cover = document.querySelector("#_export_cover");
+var title = document.querySelector("meta[name='title']").getAttribute("content");
+var author = document.querySelector("meta[name='author']").getAttribute("content");
+var description = document.querySelector("meta[name='description']").getAttribute("content");
+var descriptionSub = document.querySelector("meta[name='descriptionSub']").getAttribute("content");
+var date = document.querySelector("meta[name='date']").getAttribute("content");
+var license = document.querySelector("meta[name='license']").getAttribute("content");
+var version = document.querySelector("meta[name='version']").getAttribute("content");
+var contact = document.querySelector("meta[name='contact']").getAttribute("content");
+
+
+
+// We only check "title" as the bare minimum to decide whether to add
+// a cover page at all. You can just as well check any other variable
+// your cover page needs instead. "title" may either be empty, or - if
+// the placeholder substitution didn't run - still literally contain
+// "${title}", so either way we know something is wrong.
+if(!title || title == "${title}") {
+  // something's wrong with the title, so we don't want a cover!
+  $cover.remove();
+} else {
+  document.body.insertBefore($cover, document.body.childNodes[0])
+  $cover.querySelector("#_export_title").textContent = title;
+  $cover.querySelector("#_export_author").textContent = author;
+  $cover.querySelector("#_export_description").textContent = description;
+  $cover.querySelector("#_export_descriptionSub").textContent = descriptionSub;
+  $cover.querySelector("#_export_date").textContent = version + " " + date;
+  $cover.querySelector("#_export_license").textContent = license;
+  $cover.querySelector("#_export_contact").textContent = contact;
+
+  // Look for an image right after the YAML frontmatter whose filename
+  // contains "TP_Image" (case-insensitive, any file extension - svg/png/jpg all fine)
+  var $imageSlot = $cover.querySelector("#_export_image");
+  var $sourceImage = null;
+  var allImages = document.body.querySelectorAll("img");
+  for (var i = 0; i < allImages.length; i++) {
+    var src = allImages[i].getAttribute("src") || "";
+    if (/TP_Image/i.test(src)) {
+      $sourceImage = allImages[i];
+      break;
+    }
+  }
+
+  if ($sourceImage) {
+    var $wrapper = $sourceImage.parentElement;
+    $imageSlot.appendChild($sourceImage);
+    $sourceImage.style.maxWidth = "5cm";
+    $sourceImage.style.maxHeight = "5cm";
+    $sourceImage.style.width = "auto";
+    $sourceImage.style.height = "auto";
+    $sourceImage.style.display = "block";
+    $sourceImage.style.margin = "0 auto";
+    // clean up the now-empty paragraph left behind at the image's old position
+    if ($wrapper && $wrapper !== document.body && $wrapper.childNodes.length === 0) {
+      $wrapper.remove();
+    }
+  } else {
+    // no matching image found - remove the empty slot so there's no stray gap
+    $imageSlot.remove();
+  }
+
+}
+</script>
